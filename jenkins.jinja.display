@@ -1,0 +1,187 @@
+description:
+  author:
+    title: Google Click to Deploy
+    descriptionHtml: Popular open stacks on Google Compute Engine packaged by Google.
+    shortDescription: Popular open stacks on Google Compute Engine packaged by Google.
+    url: https://cloud.google.com/solutions/#click-to-deploy
+  descriptionHtml: Jenkins is an open-source continuous integration software tool that provides real-time feedback for isolated changes that are part of a larger project. It supports multiple SCM tools including Subversion and Git. It can execute Apache Ant and Apache Maven-based projects as well as arbitrary scripts.
+  logo: '@media/jenkins_store.png'
+  tagline: A continuous integration and delivery tool
+  title: Jenkins
+  url: https://jenkins.io/
+  version: 2.235.4
+  softwareGroups:
+  - type: SOFTWARE_GROUP_OS
+    software:
+    - title: Debian
+      version: '9.13'
+  - software:
+    - title: Apache
+      version: 2.4.25
+    - title: Git
+      version: 2.11.0
+    - title: Google-Fluentd
+      version: 1.7.1
+    - title: Groovy
+      version: 2.4.8
+    - title: Jenkins
+      version: 2.235.4
+    - title: OpenJDK
+      version: 1.8.0
+    - title: Stackdriver-Agent
+      version: 6.0.5
+  documentations:
+  - title: Jenkins Documentation
+    url: https://jenkins.io/doc/book/getting-started/
+    destinations:
+    - DESTINATION_SOLUTION_DETAILS
+    - DESTINATION_POST_DEPLOY
+  support:
+  - title: Support
+    descriptionHtml: Google does not offer support for this solution. However, community support is available on <a href="https://stackoverflow.com/questions/tagged/jenkins">Stack Overflow</a>. Additional support is available on <a href="https://wiki.jenkins-ci.org/display/JENKINS/Asking+for+Help">community forums</a>.
+  icon: '@media/jenkins_small.png'
+
+input:
+  properties:
+    - name: zone
+      title: Zone
+    - name: machineType
+      title: Machine type
+    - name: bootDiskType
+      title: Boot disk type
+      section: BOOT_DISK
+    - name: bootDiskSizeGb
+      title: Boot disk size in GB
+      section: BOOT_DISK
+    - name: network
+      title: Network name
+      section: NETWORKING
+    - name: subnetwork
+      title: Subnetwork name
+      section: NETWORKING
+    - name: externalIP
+      title: External IP
+      tooltip: 'An external IP address associated with this instance. Selecting "None" will result in the instance having no external internet access. <a href="https://cloud.google.com/compute/docs/configure-instance-ip-addresses">Learn more</a>'
+      section: NETWORKING
+    - name: enableTcp80
+      title: Allow HTTP traffic from the Internet
+      section: NETWORKING
+    - name: tcp80SourceRanges
+      title: Source IP ranges for HTTP traffic
+      tooltip: 'Traffic is only allowed from sources within these IP address ranges. Use CIDR notation when entering ranges. <a href="https://cloud.google.com/compute/docs/networking#firewalls">Learn more</a>'
+      placeholder: '0.0.0.0/0, 192.169.0.2/24'
+      section: NETWORKING
+    - name: enableTcp443
+      title: Allow HTTPS traffic from the Internet
+      section: NETWORKING
+    - name: tcp443SourceRanges
+      title: Source IP ranges for HTTPS traffic
+      tooltip: 'Traffic is only allowed from sources within these IP address ranges. Use CIDR notation when entering ranges. <a href="https://cloud.google.com/compute/docs/networking#firewalls">Learn more</a>'
+      placeholder: '0.0.0.0/0, 192.169.0.2/24'
+      section: NETWORKING
+    - name: enableComputeApi
+      title: Allow read write access to Google Compute Engine APIs on the VM
+      section: API_ACCESS
+      boolean_group: COMPUTE_API_ACCESS
+    - name: enableStackdriverLogging
+      title: Enable Stackdriver Logging
+      tooltip: 'Stackdriver Logging allows you to store, search, analyze, monitor, and alert on log data and events. <a href="https://cloud.google.com/logging/">Learn more</a>'
+      section: STACKDRIVER
+    - name: enableStackdriverMonitoring
+      title: Enable Stackdriver Monitoring
+      tooltip: 'Stackdriver Monitoring provides visibility into the performance, uptime, and overall health of cloud-powered applications. <a href="https://cloud.google.com/monitoring/">Learn more</a>'
+      section: STACKDRIVER
+  sections:
+    - name: BOOT_DISK
+      title: Boot Disk
+      tooltip: Each instance requires a disk to boot from.
+    - name: NETWORKING
+      title: Networking
+    - name: API_ACCESS
+      title: API Access
+      tooltip: Applications running on the VM can call Google Cloud APIs. Select the API access you want to allow. <a href="https://cloud.google.com/compute/docs/authentication">Learn more</a>
+    - name: STACKDRIVER
+      title: Stackdriver
+      subtext: Monitoring and management for services, containers, applications, and infrastructure
+  boolean_groups:
+    - name: COMPUTE_API_ACCESS
+      title: Compute API
+
+runtime:
+  deployingMessage: Deployment can take several minutes to complete.
+  applicationTable:
+    rows:
+      - label: Site address
+        value: <a href="https://{{ externalIp(outputs().vmSelfLink) }}/">https://{{ externalIp(outputs().vmSelfLink) }}/</a>
+        showIf: '{{ outputs().hasExternalIP }}'
+      - label: Site address (internal IP)
+        value: https://{{ outputs().vmInternalIP }}/
+        showIf: '{{ !outputs().hasExternalIP }}'
+      - label: Admin user
+        value: admin
+      - label: Admin password (Temporary)
+        value: '{{ outputs().password0 }}'
+      - label: Instance
+        value: '<a href="{{ consoleUrl(outputs().vmSelfLink) }}">{{ outputs().vmName }}</a>'
+      - label: Instance zone
+        value: '{{ properties().zone }}'
+      - label: Instance machine type
+        value: '{{ properties().machineType }}'
+  primaryButton:
+    label: Visit the site
+    type: TYPE_URL
+    action: https://{{ externalIp(outputs().vmSelfLink) }}/
+  secondaryButton:
+    label: SSH
+    type: TYPE_GCE_VM_SSH
+    action: '{{ outputs().vmSelfLink }}'
+  suggestedActions:
+    - heading: No external IP configured
+      description: 'The VM instance has been configured with no external IP or internet access. Connecting to it directly may not be possible. Consider using a <a href="https://cloud.google.com/compute/docs/instances/connecting-advanced#bastion_host">bastion host</a> to access this VM.'
+      showIf: '{{ !outputs().hasExternalIP }}'
+    - heading: Change the SSL certificate.
+      description: To update your SSL certificate, you will need to copy certificate files and a private key to the server, and update the Apache2 SSL configuration.
+      snippet: vim /etc/apache2/conf-enabled/jenkins.conf
+    - heading: Open HTTP traffic
+      description: >-
+        This firewall rule is not enabled.
+        To allow specific network traffic from the Internet,
+        create a firewall rule to open HTTP traffic
+        for target tag "{{ outputs().deployment }}-deployment".
+        <a href="https://cloud.google.com/compute/docs/networking">Learn more</a><br>
+        If you are using Google Cloud SDK, type the following command in
+        the terminal:
+      snippet: >-
+        gcloud --project={{ outputs().project }} compute firewall-rules
+        create "{{ outputs().deployment }}-tcp-80"
+        --network {{ outputs().mainNetwork }}
+        --allow tcp:80
+        --target-tags "{{ outputs().deployment }}-deployment"
+      showIf: '{{ !properties().enableTcp80 }}'
+    - heading: Open HTTPS traffic
+      description: >-
+        This firewall rule is not enabled.
+        To allow specific network traffic from the Internet,
+        create a firewall rule to open HTTPS traffic
+        for target tag "{{ outputs().deployment }}-deployment".
+        <a href="https://cloud.google.com/compute/docs/networking">Learn more</a><br>
+        If you are using Google Cloud SDK, type the following command in
+        the terminal:
+      snippet: >-
+        gcloud --project={{ outputs().project }} compute firewall-rules
+        create "{{ outputs().deployment }}-tcp-443"
+        --network {{ outputs().mainNetwork }}
+        --allow tcp:443
+        --target-tags "{{ outputs().deployment }}-deployment"
+      showIf: '{{ !properties().enableTcp443 }}'
+    - heading: Change the temporary password
+      description: For additional security, it is recommended that you change the password.
+    - heading: Assign a static external IP address to your VM instance
+      description: 'An ephemeral external IP address has been assigned to the VM instance. If you require a static external IP address, you may promote the address to static. <a href="https://cloud.google.com/compute/docs/instances-and-network#promote_ephemeral_ip">Learn more</a>'
+      showIf: '{{ outputs().hasExternalIP }}'
+
+annotations:
+  autogenSpecType: 'SINGLE_VM'
+  vmImage0: https://www.googleapis.com/compute/v1/projects/click-to-deploy-images/global/images/jenkins-v20200817
+
+metadata_version: v1

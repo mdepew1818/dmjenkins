@@ -1,0 +1,8 @@
+imports:
+- path: jenkins.jinja
+
+resources:
+- name: jenkins
+  type: jenkins.jinja
+  properties:
+    zone: us-central1-f
